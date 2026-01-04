@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.2.0-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04
 
 ARG BUILD_DATE
 ARG GIT_COMMIT
@@ -6,7 +6,7 @@ ARG GIT_COMMIT
 LABEL org.opencontainers.image.title="AIML Golden Notebook Image"
 LABEL org.opencontainers.image.description="Pinned CUDA 12.2, Python 3.10, Torch+TF, JupyterLab runtime"
 LABEL org.opencontainers.image.vendor="AIML Platform"
-LABEL org.opencontainers.image.cuda.version="12.2.0"
+LABEL org.opencontainers.image.cuda.version="12.2.2"
 LABEL org.opencontainers.image.cudnn.version="8"
 LABEL org.opencontainers.image.python.version="3.10.13"
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
@@ -16,6 +16,11 @@ LABEL ai.platform.cuda="true"
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Kolkata
+ENV XDG_DATA_HOME=/opt/share
+
+RUN mkdir -p /opt/share \
+    && chown -R root:0 /opt/share \
+    && chmod 2775 /opt/share
 
 # ---------------- OS + system deps ----------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -38,36 +43,60 @@ RUN curl -L https://dl.k8s.io/release/v1.27.0/bin/linux/amd64/kubectl \
     -o /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
 
 # ---------------- uv + Python ----------------
-RUN curl -Ls https://astral.sh/uv/install.sh | bash
-ENV PATH="/root/.cargo/bin:${PATH}"
+RUN curl -Ls https://astral.sh/uv/install.sh |  \
+    UV_INSTALL_DIR=/usr/local/bin bash
 
 RUN uv python install 3.10.13
 RUN uv venv /opt/venv
+ENV VIRTUAL_ENV=/opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # ---------------- Python deps ----------------
-COPY pip_requirements/pinned /opt/venv/pinned
-COPY pip_requirements /tmp/requirements
+RUN echo opencv-python-headless==0 > /opt/venv/pinned \
+    && echo opencv-contrib-python==0 >> /opt/venv/pinned \
+    && echo opencv-python==0 >> /opt/venv/pinned \
+    && chmod 0644 /opt/venv/pinned
+ENV PIP_CONSTRAINT=/opt/venv/pinned \
+    UV_CONSTRAINT=/opt/venv/pinned
 
-ENV PIP_CONSTRAINT=/opt/venv/pinned
+COPY pip_requirements/core.txt /tmp/requirements/core.txt 
+RUN uv pip install -r /tmp/requirements/core.txt \
+    && cat /tmp/requirements/core.txt | tee -a /opt/venv/pinned
 
-RUN uv pip install --system -r /tmp/requirements/core.txt
-RUN uv pip install --system -r /tmp/requirements/ml.txt
-RUN uv pip install --system --index-url https://download.pytorch.org/whl/cu122 \
-    -r /tmp/requirements/dl-torch.txt
-RUN uv pip install --system -r /tmp/requirements/dl-tf.txt
-RUN uv pip install --system -r /tmp/requirements/serving.txt
-RUN uv pip install --system -r /tmp/requirements/jupyter.txt
-RUN uv pip install --system -r /tmp/requirements/extras.txt
+COPY pip_requirements/ml.txt /tmp/requirements/ml.txt
+RUN uv pip install -r /tmp/requirements/ml.txt \
+    && cat /tmp/requirements/ml.txt | tee -a /opt/venv/pinned
 
-RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
+COPY pip_requirements/dl-torch.txt /tmp/requirements/dl-torch.txt
+RUN uv pip install --index-url https://download.pytorch.org/whl/cu121 \
+    --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match \
+    -r /tmp/requirements/dl-torch.txt  \
+    && cat /tmp/requirements/dl-torch.txt | tee -a /opt/venv/pinned
+
+COPY pip_requirements/dl-tf.txt /tmp/requirements/dl-tf.txt
+RUN uv pip install -r /tmp/requirements/dl-tf.txt \
+    && cat /tmp/requirements/dl-tf.txt | tee -a /opt/venv/pinned
+
+COPY pip_requirements/serving.txt /tmp/requirements/serving.txt
+RUN uv pip install -r /tmp/requirements/serving.txt \
+    && cat /tmp/requirements/serving.txt | tee -a /opt/venv/pinned
+
+COPY pip_requirements/jupyter.txt /tmp/requirements/jupyter.txt
+RUN uv pip install -r /tmp/requirements/jupyter.txt  \
+    && cat /tmp/requirements/jupyter.txt | tee -a /opt/venv/pinned
+
+COPY pip_requirements/extras.txt /tmp/requirements/extras.txt
+RUN uv pip install -r /tmp/requirements/extras.txt \
+    && cat /tmp/requirements/extras.txt | tee -a /opt/venv/pinned
+
+RUN uv pip uninstall onnxruntime-gpu && uv pip install --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/ onnxruntime-gpu==1.18.0
 
 # ---------------- Home template & scripts ----------------
-COPY docker/tmphome /opt/tmphome
-COPY docker/env_info.sh /opt/tmphome/.env_info.sh
+COPY scripts/tmphome /opt/tmphome
+COPY scripts/env_info.sh /opt/tmphome/.env_info.sh
 RUN chmod +x /opt/tmphome/.env_info.sh
 
-COPY docker/jupyter_server_config.py /etc/jupyter/jupyter_server_config.py
+COPY jupyter/jupyter_server_config.py /etc/jupyter/jupyter_server_config.py
 
 # ---------------- Runtime env ----------------
 ENV PYTHONUNBUFFERED=1

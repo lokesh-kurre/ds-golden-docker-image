@@ -2,7 +2,8 @@ grpcio==1.60.0
 grpcio-tools==1.60.0
 onnx==1.15.0
 onnxruntime-gpu==1.18.0
-faiss-gpu==1.7.4
+faiss-gpu-cu12==1.9.0.0
+cupy-cuda12x==13.4.1
 dvc[s3]==3.38.1
 gitpython==3.1.41
 confluent-kafka==2.3.0
@@ -15,4 +16,5 @@ pymongo==4.6.1
 pdf2image
 pytesseract
 pymupdf
+xmltodict==1.0.2
 opencv-contrib-python-headless==4.8.1.78

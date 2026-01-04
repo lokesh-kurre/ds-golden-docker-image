@@ -1,6 +1,10 @@
-torch==2.1.2+cu122
-torchvision==0.16.2+cu122
-torchaudio==2.1.2+cu122
-pytorch-lightning==2.1.3
+# NOTE:
+# PyTorch does not ship cu122 wheels.
+# cu121 wheels are ABI-compatible with CUDA 12.2 runtime.
+
+torch==2.1.2+cu121
+torchvision==0.16.2+cu121
+torchaudio==2.1.2+cu121
+lightning==2.1.3
 torchmetrics==1.2.1
 
