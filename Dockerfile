@@ -9,8 +9,6 @@ LABEL org.opencontainers.image.vendor="AIML Platform"
 LABEL org.opencontainers.image.cuda.version="12.2.2"
 LABEL org.opencontainers.image.cudnn.version="8"
 LABEL org.opencontainers.image.python.version="3.10.13"
-LABEL org.opencontainers.image.created="${BUILD_DATE}"
-LABEL org.opencontainers.image.revision="${GIT_COMMIT}"
 LABEL ai.platform.type="notebook"
 LABEL ai.platform.cuda="true"
 
@@ -132,4 +130,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/entrypoint.sh"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.revision="${GIT_COMMIT}"
 
