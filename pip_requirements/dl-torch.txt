@@ -1,0 +1,6 @@
+torch==2.1.2+cu122
+torchvision==0.16.2+cu122
+torchaudio==2.1.2+cu122
+pytorch-lightning==2.1.3
+torchmetrics==1.2.1
+
