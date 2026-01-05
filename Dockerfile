@@ -22,13 +22,14 @@ RUN mkdir -p /opt/share \
 
 # ---------------- OS + system deps ----------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo ca-certificates curl wget git git-lfs vim bash bash-completion \
+    sudo ca-certificates curl wget git git-lfs vim nano bash bash-completion \
     build-essential tzdata tini \
     net-tools iputils-ping dnsutils lsof strace pciutils \
     libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 \
     poppler-utils tesseract-ocr libtesseract-dev ghostscript antiword unrtf \
     libpq-dev librdkafka-dev libxml2 libxslt1.1 \
     fuse s3fs gdb libc6-dbg \
+    zip unzip tar gzip bzip2 xz-utils binutils nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 RUN ln -fs /usr/share/zoneinfo/Asia/Kolkata /etc/localtime && \
@@ -87,14 +88,21 @@ COPY pip_requirements/extras.txt /tmp/requirements/extras.txt
 RUN uv pip install -r /tmp/requirements/extras.txt \
     && cat /tmp/requirements/extras.txt | tee -a /opt/venv/pinned
 
+
+COPY pip_requirements/llm.txt /tmp/requirements/llm.txt
+RUN uv pip install -r /tmp/requirements/llm.txt \
+    && cat /tmp/requirements/llm.txt | tee -a /opt/venv/pinned
+
 RUN uv pip uninstall onnxruntime-gpu && uv pip install --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/ onnxruntime-gpu==1.18.0
+
 
 # ---------------- Home template & scripts ----------------
 COPY scripts/tmphome /opt/tmphome
 COPY scripts/env_info.sh /opt/tmphome/.env_info.sh
 RUN chmod +x /opt/tmphome/.env_info.sh
 
-COPY jupyter/jupyter_server_config.py /etc/jupyter/jupyter_server_config.py
+COPY jupyter/jupyter_server_config.py /opt/venv/etc/jupyter/jupyter_server_config.py
+COPY jupyter/jupyterlab_config.json /opt/venv/share/jupyter/lab/settings/overrides.json
 
 # ---------------- Runtime env ----------------
 ENV PYTHONUNBUFFERED=1
@@ -128,8 +136,9 @@ WORKDIR /home/jovyan
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD curl -fsS "http://127.0.0.1:${SVC_PORT}${NB_PREFIX}api/status" || exit 1
 
-ENTRYPOINT ["/usr/bin/tini", "--"]
-CMD ["/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
+
+CMD ["jupyter", "notebook"]
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.revision="${GIT_COMMIT}"

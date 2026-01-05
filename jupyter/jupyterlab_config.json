@@ -1,0 +1,76 @@
+{
+  "@jupyterlab/fileeditor-extension:plugin": {
+    "editorConfig": {
+      "autoClosingBrackets": true,
+      "codeFolding": true,
+	  "highlightActiveLine": true
+    },
+    "scrollPastEnd": false
+  },
+  "@jupyterlab/notebook-extension:tracker": {
+    "codeCellConfig": {
+      "lineNumbers": true,
+      "lineWrap": true,
+      "autoClosingBrackets": true,
+      "matchBrackets": true
+    },
+    "markdownCellConfig": {
+      "autoClosingBrackets": true,
+      "matchBrackets": true
+    },
+    "rawCellConfig": {
+      "autoClosingBrackets": true,
+      "matchBrackets": true
+    },
+    "enableKernelInitNotification": false,
+    "defaultCell": "code",
+    "autoStartDefaultKernel": true,
+    "kernelShutdown": false,
+    "autoRenderMarkdownCells": false,
+    "scrollPastEnd": true,
+    "showEditorForReadOnlyMarkdown": true,
+    "kernelStatus": {
+        "showOnStatusBar": false,
+        "showProgress": true
+    },
+    "documentWideUndoRedo": false,
+    "showHiddenCellsButton": true,
+    "windowingMode": "full"
+  },
+  "@jupyter-widgets/jupyterlab-manager:plugin": {
+    "saveState": true
+  },
+  "@jupyterlab/filebrowser-extension:browser": {
+    "showFileCheckboxes": true,
+    "sortNotebooksFirst": true,
+    "useFuzzyFilter": true,
+    "filterDirectories": true,
+    "showLastModifiedColumn": true,
+    "showFileSizeColumn": true
+  },
+  "@jupyterlab/docmanager-extension:plugin": {
+    "autosave": true,
+    "autosaveInterval": 10,
+    "confirmClosingDocument": false,
+    "lastModifiedCheckMargin": 500,
+    "defaultViewers": {},
+    "renameUntitledFileOnSave": true,
+    "maxNumberRecents": 10
+  },
+  "@jupyterlab/codemirror-extension:plugin": {
+	  "defaultConfig": {
+        "autoClosingBrackets": true
+    }
+  },
+  "@jupyterlab/completer-extension:manager": {
+	  "autoCompletion": true
+  },
+  "@jupyterlab/apputils-extension:notification": {
+    "fetchNews": false,
+    "doNotDisturbMode": true
+  },
+  "@jupyterlab/extensionmanager-extension:plugin": {
+    "disclaimed": true,
+    "enabled": false
+  }
+}

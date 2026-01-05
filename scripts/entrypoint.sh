@@ -23,5 +23,5 @@ if [ ! -f "$HOME/.bashrc" ]; then
 fi
 
 cd "${SERVE_DIR}"
-exec jupyter-lab
 
+exec "$@"
