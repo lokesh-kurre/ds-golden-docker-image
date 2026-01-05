@@ -64,7 +64,6 @@ Run from the **repository root**:
 
 ```bash
 docker build \
-  -f docker/Dockerfile \
   --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
   --build-arg GIT_COMMIT=$(git rev-parse HEAD) \
   -t lokeshkurre/notebooks:golden-cuda12.2-py3.10-2024.09 \
