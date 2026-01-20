@@ -125,6 +125,8 @@ RUN useradd -m -u 1000 -g 0 jovyan && \
     echo "jovyan ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/jovyan && \
     chmod 0440 /etc/sudoers.d/jovyan
 
+RUN find /opt/ -type d -exec chmod g+rws {} \;
+
 # ---------------- Entrypoint ----------------
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

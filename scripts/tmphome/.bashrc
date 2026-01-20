@@ -2,7 +2,6 @@ source /opt/venv/bin/activate
 
 export PS1="(venv) \u@\h:\w$ "
 export TERM=xterm-256color
-export COLUMNS=200
 
 alias l='ls -CF'
 alias ll='ls -alF --group-directories-first'

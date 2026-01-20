@@ -63,7 +63,7 @@
     }
   },
   "@jupyterlab/completer-extension:manager": {
-	  "autoCompletion": true
+	  "autoCompletion": false
   },
   "@jupyterlab/apputils-extension:notification": {
     "fetchNews": false,
