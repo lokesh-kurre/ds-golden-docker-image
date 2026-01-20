@@ -1,7 +1,4 @@
-FROM nvidia/cuda:12.2.2-cudnn8-runtime-ubuntu22.04
-
-ARG BUILD_DATE
-ARG GIT_COMMIT
+FROM --platform=linux/amd64 nvidia/cuda:12.2.2-cudnn8-devel-ubuntu22.04
 
 LABEL org.opencontainers.image.title="AIML Golden Notebook Image"
 LABEL org.opencontainers.image.description="Pinned CUDA 12.2, Python 3.10, Torch+TF, JupyterLab runtime"
@@ -15,21 +12,22 @@ LABEL ai.platform.cuda="true"
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Asia/Kolkata
 ENV XDG_DATA_HOME=/opt/share
+ENV TORCH_EXTENSIONS_DIR=/opt/torch_extensions
 
-RUN mkdir -p /opt/share \
-    && chown -R root:0 /opt/share \
-    && chmod 2775 /opt/share
+RUN mkdir -p /opt /opt/share /opt/torch_extensions \
+    && chown -R root:0 /opt /opt/share /opt/torch_extensions \
+    && chmod 2775 /opt /opt/share /opt/torch_extensions
 
 # ---------------- OS + system deps ----------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo ca-certificates curl wget git git-lfs vim nano bash bash-completion \
-    build-essential tzdata tini \
-    net-tools iputils-ping dnsutils lsof strace pciutils \
-    libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 \
-    poppler-utils tesseract-ocr libtesseract-dev ghostscript antiword unrtf \
-    libpq-dev librdkafka-dev libxml2 libxslt1.1 \
-    fuse s3fs gdb libc6-dbg \
-    zip unzip tar gzip bzip2 xz-utils binutils nodejs \
+    sudo apt-utils ca-certificates openssl openssh-client curl wget git git-lfs vim nano tmux bash bash-completion \
+    build-essential gnupg make gettext cmake ninja-build gcc g++ pkg-config locales lsb-release tzdata tini \
+    telnet traceroute net-tools iputils-ping procps dnsutils lsof strace pciutils \
+    libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 libboost-all-dev libeigen3-dev autotools-dev libicu-dev libbz2-dev  \
+    graphviz poppler-utils tesseract-ocr libtesseract-dev ghostscript antiword unrtf \
+    libpq-dev librdkafka-dev libxml2 libxslt1.1 tree \
+    fuse s3fs gdb libc6-dbg gfortran gpg jq less perl rsync sed xxd zlib1g-dev \
+    zip unzip unrar tar gzip bzip2 xz-utils p7zip-full p7zip-rar binutils nodejs python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN ln -fs /usr/share/zoneinfo/Asia/Kolkata /etc/localtime && \
@@ -48,6 +46,7 @@ RUN curl -Ls https://astral.sh/uv/install.sh |  \
 RUN uv python install 3.10.13
 RUN uv venv /opt/venv
 ENV VIRTUAL_ENV=/opt/venv
+ENV UV_LINK_MODE=copy
 ENV PATH="/opt/venv/bin:$PATH"
 
 # ---------------- Python deps ----------------
@@ -80,20 +79,19 @@ COPY pip_requirements/serving.txt /tmp/requirements/serving.txt
 RUN uv pip install -r /tmp/requirements/serving.txt \
     && cat /tmp/requirements/serving.txt | tee -a /opt/venv/pinned
 
-COPY pip_requirements/jupyter.txt /tmp/requirements/jupyter.txt
-RUN uv pip install -r /tmp/requirements/jupyter.txt  \
-    && cat /tmp/requirements/jupyter.txt | tee -a /opt/venv/pinned
-
 COPY pip_requirements/extras.txt /tmp/requirements/extras.txt
 RUN uv pip install -r /tmp/requirements/extras.txt \
     && cat /tmp/requirements/extras.txt | tee -a /opt/venv/pinned
-
 
 COPY pip_requirements/llm.txt /tmp/requirements/llm.txt
 RUN uv pip install -r /tmp/requirements/llm.txt \
     && cat /tmp/requirements/llm.txt | tee -a /opt/venv/pinned
 
 RUN uv pip uninstall onnxruntime-gpu && uv pip install --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/ onnxruntime-gpu==1.18.0
+
+COPY pip_requirements/jupyter.txt /tmp/requirements/jupyter.txt
+RUN uv pip install -r /tmp/requirements/jupyter.txt  \
+    && cat /tmp/requirements/jupyter.txt | tee -a /opt/venv/pinned
 
 
 # ---------------- Home template & scripts ----------------
@@ -108,6 +106,7 @@ COPY jupyter/jupyterlab_config.json /opt/venv/share/jupyter/lab/settings/overrid
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONFAULTHANDLER=1
 ENV CUDA_LAUNCH_BLOCKING=1
+ENV TF_CPP_MIN_LOG_LEVEL=2
 ENV OMP_NUM_THREADS=1
 ENV MKL_NUM_THREADS=1
 ENV OPENBLAS_NUM_THREADS=1
@@ -139,6 +138,9 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
 
 CMD ["jupyter", "notebook"]
+
+ARG BUILD_DATE
+ARG GIT_COMMIT
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.revision="${GIT_COMMIT}"
