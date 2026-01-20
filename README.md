@@ -30,13 +30,12 @@ Tags must be **explicit and immutable**.
 Recommended format:
 
 ```
-golden-cuda12.2-py3.10-YYYY.MM[-rN]
+golden-cuda12.2-py3.10-YYYY.MM-<commit-hash>
 ```
 
 Examples:
 ```
-golden-cuda12.2-py3.10-2024.09
-golden-cuda12.2-py3.10-2024.09-r1
+golden-cuda12.2-py3.10-2025.01-06cbgded
 ```
 
 Rules:
@@ -66,13 +65,13 @@ Run from the **repository root**:
 docker build \
   --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
   --build-arg GIT_COMMIT=$(git rev-parse HEAD) \
-  -t lokeshkurre/notebooks:golden-cuda12.2-py3.10-2024.09 \
+  -t lokeshkurre/notebooks:golden-cuda12.2-py3.10-$(date -u +%Y.%m)-$(git rev-parse --short=8 HEAD) \
   .
 ```
 
 ## Push to Harbor
 ```
-docker push lokeshkurre/notebooks:golden-cuda12.2-py3.10-2024.09
+docker push lokeshkurre/notebooks:golden-cuda12.2-py3.10-2025.01-06cbgded
 ```
 
 ## Runtime Validation
